@@ -13,10 +13,25 @@
   --ifm-color-primary-light: #090062;
   --ifm-color-primary-lighter: #090066;
   --ifm-color-primary-lightest: #0a0074;
+  --docusaurus-highlighted-code-line-bg: rgba(51, 255, 0, 0.1);
 }
 
 .navbar__title {
   font-size: 1.4rem;
   font-weight: 450;
   margin-left: 0.8rem;
+}
+
+.code-block-error-line {
+  background-color: #ff000020;
+  display: block;
+  margin: 0 calc(-1 * var(--ifm-pre-padding));
+  padding: 0 calc(var(--ifm-pre-padding) - 3px);
+  border-left: 3px solid #ff000080;
+}
+
+sup a {
+  text-decoration: underline;
+  font-size: small;
+  color: blue;
 }

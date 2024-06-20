@@ -1,0 +1,243 @@
+---
+title: 技術ブログをはじめました
+description: Dcusourusではじめる技術ブログ
+slug: start-tech-blog
+authors:
+  - daichi.ogura
+tags: [blog]
+hide_table_of_contents: false
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+import Mermaid from "@theme/Mermaid";
+
+WeCapital 株式会社の技術ブログを開設しました。
+1 本目のブログとして、本ブログでも利用している Docusaurus でのブログ開設について記します。
+
+## Docusaurus の紹介
+
+ブログ開設には様々な選択肢があります。
+
+- Qiita, note, Zenn, はてなブログなどのプラットフォームを利用する
+- Wordpress, Movable Type などの CMS を利用する
+- Docusaurus, Hugo, MkDocs などの静的サイトジェネレータを利用する
+
+せっかくなら会社ブランド向上のために自前で用意したい、静的ホスティングでインフラ管理なくかつ無料でデプロイしたい、MDX を使ってみたい、などの理由から今回は Docusaurus を選定しました。
+技術ブログですので Markdown かつローカルで開発サーバーを立てることのハードルも低いことも理由になります。
+
+<!-- truncate -->
+
+## Docusaurusのマークダウン
+
+### コードブロック
+
+Docusaurusの機能を知るには公式ドキュメントを見るのが一番良いと思います。Docusaurusの設定は`docusaurus.config.ts`に書かれますが、この設定についても Docusaurus のドキュメントが参考になります。
+
+例えばですが、コードブロックのシンタックスハイライトに利用される[prism](https://prismjs.com/)の設定ですが、以下のようになっています。
+ハイライトするには`magicComment`セクションに`highlight-start`と`highlight-end`をコメントで追加します。エラーを表示するには`error-next-line`をコメントで追加します。
+
+:::info
+MDXタブにmagicCommentsのコメントの記法をCSSタブにスタイルを記載しています。
+:::
+
+<Tabs>
+  <TabItem value="display" label="表示のされかた" default>
+      ```python title="sample.js"
+      def error_function(x, y):
+          # error-next-line
+          result = x / y
+
+          return result
+
+      def fixed_function(x, y):
+          # highlight-next-line
+          try:
+            result = x / y
+          # highlight-start        
+          except ZeroDivisionError as e:
+            print(f"Error: {e}")
+          # highlight-end
+
+          return result
+      ```
+  </TabItem>
+
+  <TabItem value="mdx" label="MDX">
+      ````diff title="sample.mdx"
+      ```python title="sample.js"
+      def error_function(x, y):
+      +   # error-next-line
+          result = x / y
+
+          return result
+
+      def fixed_function(x, y):
+      +   # highlight-next-line
+          try:
+            result = x / y
+      +   # highlight-start        
+          except ZeroDivisionError as e:
+            print(f"Error: {e}")
+      +   # highlight-end
+
+          return result
+      ```
+      ````
+  </TabItem>
+
+  <TabItem value="docusaurus.config.ts" label="docusaurus.config.ts" default>
+```json title="docusaurus.config.ts"
+themeConfig: {
+.......
+  prism: {
+// highlight-start
+    magicComments: [
+      {
+        className: 'theme-code-block-highlighted-line',
+        line: 'highlight-next-line',
+        block: {start: 'highlight-start', end: 'highlight-end'},
+      },
+      {
+        className: 'code-block-error-line',
+        line: 'This will error',
+      },
+    ],
+// highlight-end
+  },
+......
+}
+```
+
+  </TabItem>
+
+  <TabItem value="css" label="CSS">
+```css title="custom.css"
+:root {
+  --ifm-color-primary: rgb(8, 0, 89);
+  --ifm-color-primary-dark: #070050;
+  --ifm-color-primary-darker: #07004c;
+  --ifm-color-primary-darkest: #06003e;
+  --ifm-color-primary-light: #090062;
+  --ifm-color-primary-lighter: #090066;
+  --ifm-color-primary-lightest: #0a0074;
+  // highlight-next-line
+  --docusaurus-highlighted-code-line-bg: rgba(51, 255, 0, 0.1);
+}
+
+// highlight-start
+.code-block-error-line {
+  background-color: #ff000020;
+  display: block;
+  margin: 0 calc(-1 \* var(--ifm-pre-padding));
+  padding: 0 calc(var(--ifm-pre-padding) - 3px);
+  border-left: 3px solid #ff000080;
+}
+// highlight-end
+
+````
+  </TabItem>
+</Tabs>
+
+### タブ
+
+<Tabs groupId="current-os" queryString>
+  <TabItem value="windows" label="Windows">
+    ```powershell
+    choco install nodejs
+    ```
+  </TabItem>
+  <TabItem value="mac" label="macOS">
+    ```bash
+    $ brew install node
+    ```
+  </TabItem>
+  <TabItem value="linux" label="Linux(Debian)">
+    ```bash
+    apt install nodejs
+    ```
+  </TabItem>
+</Tabs>
+
+<Tabs groupId="current-os" queryString>
+  <TabItem value="windows" label="Windows">
+    node -v
+  </TabItem>
+  <TabItem value="mac" label="macOS">
+    node -v
+  </TabItem>
+</Tabs>
+
+## aaa
+
+```js
+type EditUrlFunction = (params: {
+  // This doesn't turn into a link (for good reason!)
+  version: <a href="/docs/versioning">Version</a>;
+  versionDocsDirPath: string;
+  docPath: string;
+  permalink: string;
+  locale: string;
+}) => string | undefined;
+````
+
+```js
+// highlight-start
+function main() {
+  return "Hello, world!";
+}
+// highlight-end
+```
+
+[^quality]: If you do not find it so, please file a GitHub issue or pull request!
+
+<details>
+  <summary>アコーディオン</summary>
+  <p>
+    <code>&lt;details&gt;</code> と <code>&lt;summary&gt;</code>{" "}
+    のスタイルが用意されています。
+  </p>
+</details>
+
+In JavaScript, trying to access properties on `null` will error.
+
+```js
+const name = null;
+// This will error
+console.log(name.toUpperCase());
+// Uncaught TypeError: Cannot read properties of null (reading 'toUpperCase')
+```
+
+```diff
+- aaaa
++ bbbb
+```
+
+```js {1,3-4} showLineNumbers
+function fancyAlert(arg) {
+  if (arg) {
+    $.facebox({ div: "#foo" });
+  }
+}
+```
+
+`remark-numbered-footnote-labels` is a quality plugin! [^quality]
+
+```js showLineNumbers
+import React from "react";
+
++ added content
+- removed content
+
+function MyComponent(props) {
+  if (aaaa)
+    if (props.isBar) {
+      return <div>Bar</div>;
+    }
+
+  // error-next-line
+  return <div>Foo</div>;
+}
+
+export default MyComponent;
+```
