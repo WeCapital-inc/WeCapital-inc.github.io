@@ -2,6 +2,9 @@ import { themes as prismThemes } from "prism-react-renderer";
 import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
 
+import lightTheme from "./src/utils/prism";
+import rehypePrismPlus from "rehype-prism-plus";
+
 const config: Config = {
   title: "Tech Blog",
   tagline: "Tech blog by WeCapital Engineers",
@@ -47,7 +50,6 @@ const config: Config = {
       disableSwitch: true,
       respectPrefersColorScheme: false,
     },
-
     navbar: {
       title: "Tech Blog",
       hideOnScroll: true,
@@ -86,7 +88,30 @@ const config: Config = {
       copyright: `Copyright © ${new Date().getFullYear()} WeCapital Inc. ALL RIGHTS RESERVED`,
     },
     prism: {
-      theme: prismThemes.github,
+      theme: lightTheme,
+      additionalLanguages: [
+        "java",
+        "latex",
+        "haskell",
+        "matlab",
+        "PHp",
+        "powershell",
+        "bash",
+        "diff",
+        "json",
+        "scss",
+      ],
+      magicComments: [
+        {
+          className: "theme-code-block-highlighted-line",
+          line: "highlight-next-line",
+          block: { start: "highlight-start", end: "highlight-end" },
+        },
+        {
+          className: "code-block-error-line",
+          line: "error-next-line",
+        },
+      ],
     },
   } satisfies Preset.ThemeConfig,
 

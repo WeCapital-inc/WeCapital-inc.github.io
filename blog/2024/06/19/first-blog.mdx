@@ -1,0 +1,342 @@
+---
+title: 技術ブログをはじめました
+description: Dcusourusではじめる技術ブログ
+slug: start-tech-blog
+authors:
+  - daichi.ogura
+tags: [blog, docusaurus, mdx]
+hide_table_of_contents: false
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+import Typography from "@mui/material/Typography";
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import InfoIcon from '@mui/icons-material/Info';
+import Button from '@mui/material/Button';
+import { BarChart } from '@mui/x-charts/BarChart';
+import Cat from '@site/src/components/Cat';
+import JobPosting from '@site/src/components/JobPosting';
+
+WeCapital 株式会社の技術ブログを開設しました。
+1 本目のブログとして、本ブログでも利用している Docusaurus でのブログ開設について記します。
+
+## Docusaurus の紹介
+
+ブログ開設には様々な選択肢があります。
+
+- Qiita, note, Zenn, はてなブログなどのプラットフォームを利用する
+- Wordpress, Movable Type などの CMS を利用する
+- Docusaurus, Hugo, MkDocs などの静的サイトジェネレータを利用する
+
+せっかくなら会社ブランド向上のために自前で用意したい、静的ホスティングでインフラ管理なくかつ無料でデプロイしたい、MDX を使ってみたい、などの理由から今回は Docusaurus を選定しました。
+技術ブログですので Markdown かつローカルで開発サーバーを立てることのハードルが低いことも理由になります。
+
+{/* truncate */}
+
+今回はGitHub Pagesを利用してデプロイしていますが、多くのホスティングサービスに対応しておりドキュメントも充実しています。[^hosting]
+
+[^hosting]:[https://docusaurus.io/docs/deployment](https://docusaurus.io/docs/deployment)
+
+## Docusaurusのマークダウン
+
+Docusaurusの[公式ドキュメント](https://docusaurus.io/docs)はかなり充実している印象です。
+Docusaurusの設定は`docusaurus.config.ts`に書かれますが、この設定についてはDocusaurusのドキュメント自体の設定をみると参考になります。[^docusaurus-doc] 他にもDocusaurusを利用しているサイトを参考にするのもよさそうです。機能が非常に多いためいくつかをピックアップして紹介します。
+
+[^docusaurus-doc]: [https://github.com/facebook/docusaurus/blob/main/website/docusaurus.config.ts](https://github.com/facebook/docusaurus/blob/main/website/docusaurus.config.ts)
+
+### コードブロック
+
+コードブロックの一例ですが、[prism](https://prismjs.com/)セクションの`magicComment`の設定により、自由に指定行にclassを付与することができます。  
+MDXファイルと`docusaurus.config.ts`、`css`の例とその表示例になります。
+`highlight-start`と`highlight-end`というコメントで囲った部分をハイライトし、`error-next-line`の次の表をエラーのように表現します。
+
+<Tabs>
+  <TabItem value="display" label="表示のされかた" default>
+      ```python title="sample.py"
+      def error_function(x, y):
+          # error-next-line
+          result = x / y
+
+          return result
+
+      def fixed_function(x, y):
+          # highlight-next-line
+          try:
+            result = x / y
+          # highlight-start        
+          except ZeroDivisionError as e:
+            print(f"Error: {e}")
+          # highlight-end
+
+          return result
+      ```
+  </TabItem>
+
+  <TabItem value="mdx" label="sample.mdx">
+      ````diff
+        ```python title="sample.py"
+        def error_function(x, y):
+      +     # error-next-line
+            result = x / y
+
+            return result
+
+        def fixed_function(x, y):
+      +     # highlight-next-line
+            try:
+              result = x / y
+      +     # highlight-start        
+            except ZeroDivisionError as e:
+              print(f"Error: {e}")
+      +     # highlight-end
+
+          return result
+        ```
+      ````
+  </TabItem>
+
+  <TabItem value="docusaurus.config.ts" label="docusaurus.config.ts" default>
+    ```json
+    themeConfig: {
+    .......
+      prism: {
+    // highlight-start
+        magicComments: [
+          {
+            className: 'theme-code-block-highlighted-line',
+            line: 'highlight-next-line',
+            block: {start: 'highlight-start', end: 'highlight-end'},
+          },
+          {
+            className: 'code-block-error-line',
+            line: 'This will error',
+          },
+        ],
+    // highlight-end
+      },
+    ......
+    }
+    ```
+
+  </TabItem>
+
+  <TabItem value="css" label="custome.css">
+    ```css
+    :root {
+      --ifm-color-primary: rgb(8, 0, 89);
+      --ifm-color-primary-dark: #070050;
+      --ifm-color-primary-darker: #07004c;
+      --ifm-color-primary-darkest: #06003e;
+      --ifm-color-primary-light: #090062;
+      --ifm-color-primary-lighter: #090066;
+      --ifm-color-primary-lightest: #0a0074;
+      // highlight-next-line
+      --docusaurus-highlighted-code-line-bg: rgba(51, 255, 0, 0.1);
+    }
+
+    // highlight-start
+    .code-block-error-line {
+      background-color: #ff000020;
+      display: block;
+      margin: 0 calc(-1 \* var(--ifm-pre-padding));
+      padding: 0 calc(var(--ifm-pre-padding) - 3px);
+      border-left: 3px solid #ff000080;
+    }
+    // highlight-end
+
+    ````
+  </TabItem>
+</Tabs>
+
+:::info
+MDXタブにmagicCommentsのコメントの記法をCSSタブにスタイルを記載しています。<Tooltip title="CodeBlockの記法を4つのバッククォートで囲うと、CodeBlockをRawテキストとして表示できます。" placement="top"><InfoIcon fontSize="medium"/></Tooltip>
+:::
+
+Diffも表現することができます。
+
+<Tabs>
+  <TabItem value="display" label="表示のされかた" default>
+  ```diff title="sample.py"
+    a = 1
+    b = 2
+  - c = a + d
+  + c = a - b
+  ```
+  </TabItem>
+  <TabItem value="mdx" label="sample.mdx">
+  ````
+  ```diff title="sample.py"
+    a = 1
+    b = 2
+  - c = a + d
+  + c = a - b
+  ```
+  ````
+  </TabItem>
+</Tabs>
+
+ドキュメント：[https://docusaurus.io/docs/markdown-features/code-blocks](https://docusaurus.io/docs/markdown-features/code-blocks)
+
+
+### タブ
+
+コードブロックのセクションでも利用していますが、シンクロされたタブを作成することもできます。さらに、URLのクエリパラメータにも状態を付与できます。インストール手順など作成するのに便利です。
+
+<Tabs groupId="current-os" queryString>
+  <TabItem value="windows" label="Windows">
+    ```powershell
+    choco install nodejs-lts
+    ```
+  </TabItem>
+  <TabItem value="mac" label="macOS">
+    ```shell
+    brew install node@20
+    ```
+  </TabItem>
+</Tabs>
+
+
+<Tabs groupId="current-os" queryString>
+  <TabItem value="windows" label="Windows">
+    ```powershell
+    node -v
+    ```
+  </TabItem>
+  <TabItem value="mac" label="macOS">
+    ```shell
+    node -v
+    ```
+  </TabItem>
+</Tabs>
+
+記述の仕方は以下の通りです。<Tooltip title="groupIdが開くタブのシンクロ化するID、queryStringがURLにクエリストリングを追加する設定です" placement="right"><InfoIcon fontSize="medium"/></Tooltip>
+
+````jsx
+<Tabs groupId="current-os" queryString>
+  <TabItem value="windows" label="タブのタイトル">
+    /* ここに内容 */
+  </TabItem>
+  <TabItem value="mac" label="タブのタイトル">
+    /* ここに内容 */
+  </TabItem>
+</Tabs>
+````
+
+ドキュメント：[https://docusaurus.io/docs/markdown-features/tabs](https://docusaurus.io/docs/markdown-features/tabs)
+
+
+### ライブコードエディタ
+
+Docusaurusで目立つ機能かと思いますが、ライブコードエディタを利用することができます。テーマを導入するだけで簡単に利用できます。
+
+```jsx live
+function Clock(props) {
+  const [count, setCount] = useState(0);
+
+  function handleClick() {
+    setCount(count + 1);
+  }
+
+  return (
+    <div>
+      <button onClick={handleClick}>Click me</button>
+      <h2>It is {count}</h2>
+    </div>
+  );
+}
+```
+
+ドキュメント：[https://docusaurus.io/docs/markdown-features/code-blocks#interactive-code-editor](https://docusaurus.io/docs/markdown-features/code-blocks#interactive-code-editor)
+
+### カスタムコンポーネント
+
+MDXをサポートしているため、JSXを記述してReactコンポーネントを呼び出すことができます。[タブ](#タブ)もJSXで記述しました。
+
+今回は例としてMUIコンポーネントを利用してReactコンポーネントをMDXで利用してみます。最近追加された`@mui/x-charts`の`BarChart`をサンプルコード色だけ変えてそのまま利用してみます。<Tooltip title="利用するにはMUIのインストールは必要です" placement="right"><InfoIcon fontSize="medium"/></Tooltip>
+
+<Tabs>
+  <TabItem value="display" label="表示のされかた" default>
+    <BarChart
+      series={[
+        { data: [35, 44, 24, 34], color: 'rgba(100, 149, 237, 0.7)' },
+        { data: [51, 6, 49, 30], color: 'rgba(70, 130, 180, 0.7)' },
+        { data: [15, 25, 30, 50], color: 'rgba(147, 112, 219, 0.7)' },
+        { data: [60, 50, 15, 25], color: 'rgba(255, 140, 0, 0.7)' },
+      ]}
+      height={290}
+      xAxis={[{ data: ['Q1', 'Q2', 'Q3', 'Q4'], scaleType: 'band' }]}
+      margin={{ top: 10, bottom: 30, left: 40, right: 10 }}
+    />
+  </TabItem>
+  <TabItem value="mdx" label="sample.mdx">
+    ```jsx
+    import { BarChart } from '@mui/x-charts/BarChart';
+
+    <BarChart
+      series={[
+        { data: [35, 44, 24, 34], color: 'rgba(100, 149, 237, 0.7)' },
+        { data: [51, 6, 49, 30], color: 'rgba(70, 130, 180, 0.7)' },
+        { data: [15, 25, 30, 50], color: 'rgba(147, 112, 219, 0.7)' },
+        { data: [60, 50, 15, 25], color: 'rgba(255, 140, 0, 0.7)' },
+      ]}
+      height={290}
+      xAxis={[{ data: ['Q1', 'Q2', 'Q3', 'Q4'], scaleType: 'band' }]}
+      margin={{ top: 10, bottom: 30, left: 40, right: 10 }}
+    />
+    ```
+  </TabItem>
+</Tabs>
+
+自作のコンポーネントも利用できます。例えば、この<Tooltip title="MUIのToolTipを利用しています" placement="top"><InfoIcon fontSize="medium"/></Tooltip>もMUIのToolTipです。普通に利用するとずれるためスタイルは調整しています。
+
+```css title="custom.css"
+.MuiSvgIcon-root {
+  vertical-align: bottom;
+  padding-top: 1px;
+  padding-bottom: 4px;
+}
+```
+
+SSRではないためサーバーサイドで外部APIのフェッチをしたりDBからデータを取得することはできませんが、クライアントサイドでのAPIフェッチは可能です。
+[The Cat API](https://thecatapi.com/)からランダムな猫の画像を取得して表示するReactコンポーネントの例です。<Tooltip title="The Cat APIは月10,000件まで無償利用ができるAPIです。" placement="top"><InfoIcon fontSize="medium"/></Tooltip>
+
+<Cat/>
+
+### その他
+
+他にもremark, rehypeプラグインも利用でき、最初からかなり多くのプラグインが利用できます。私は利用したことがなかったのですが、注釈も利用できるようです。
+他にも有用なプラグインを探すのに便利なリポジトリがあります。[^chusyaku]
+
+[^chusyaku]:注釈はこのように表示されます。Footnotesの日本語化は変更が公開されておらず一旦諦めました。
+
+- [awesome-remark](https://github.com/remarkjs/awesome-remark)
+- [awesome-rehype](https://github.com/rehypejs/awesome-rehype)
+
+
+## ブログレイアウトの調整
+
+DocusaurusのBlogページのレイアウトは、デフォルトで「最近の投稿・コンテンツ・目次」が「3:7:2」で表示されます。ドキュメントと比べて少し幅が狭いので変更しました。いくつかコミュニティで議論がありましたが変更できるようにする変更は見られなく、変更できても複雑だったので簡易的な方法を紹介します。
+
+```css title="custom.css"
+@media screen and (min-width: 1000px) {
+  .col--7 {
+    --ifm-col-width: calc(8 / 12 * 100%);
+  }
+  .col--3 {
+    --ifm-col-width: calc(2 / 12 * 100%);
+  }  
+  .col--2 {
+    --ifm-col-width: calc(2 / 12 * 100%);
+  }
+}
+```
+
+## さいごに
+
+Docusaurusは紹介しきれないほどの多くのカスタマイズができ、紹介した他にもMermaid.jsや国際化、SEO対策などもサポートされています。デフォルトの設定でも十分に利用でき、本格的にやるにも多くのカスタマイズができ使いやすいツールだと思います。
+
+
+<JobPosting/>
