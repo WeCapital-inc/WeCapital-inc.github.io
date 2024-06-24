@@ -40,6 +40,9 @@ const config: Config = {
         theme: {
           customCss: "./src/css/custom.css",
         },
+        gtag: {
+          trackingID: "GTM-TL85PCMF",
+        },
       } satisfies Preset.Options,
     ],
   ],
