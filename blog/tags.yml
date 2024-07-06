@@ -16,3 +16,6 @@ aws:
 fargate:
   label: Fargate
   permalink: /fargate
+application-auto-scaling:
+  label: Application Auto Scaling
+  permalink: /application-auto-scaling
