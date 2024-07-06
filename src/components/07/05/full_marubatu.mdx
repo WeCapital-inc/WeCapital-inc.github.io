@@ -1,0 +1,151 @@
+```go
+package main
+
+import (
+	"errors"
+	"fmt"
+	"os"
+	"strconv"
+
+	tea "github.com/charmbracelet/bubbletea"
+)
+
+type MARUBATU bool
+
+const (
+	MARU MARUBATU = true
+	BATU MARUBATU = false
+)
+
+func (m MARUBATU) String() string {
+	if m == MARU {
+		return "○"
+	}
+	return "×"
+}
+
+type model struct {
+	maruBatu [3][3]*MARUBATU
+	turn     MARUBATU
+}
+
+func getXY(n int) (int, int) {
+	x := (n - 1) / 3
+	y := (n - 1) % 3
+	return x, y
+}
+
+func (m model) getCell(n int) *MARUBATU {
+	x, y := getXY(n)
+	return m.maruBatu[x][y]
+}
+
+func (m *model) setCell(n int) error {
+	x, y := getXY(n)
+	if m.maruBatu[x][y] == nil {
+		marukabatu := m.turn
+		m.maruBatu[x][y] = &marukabatu
+		return nil
+	}
+	return errors.New("already put")
+}
+func (m *model) createBarubatuTable() [3][3]string {
+	var matuBatuTable [3][3]string
+	for x, row := range m.maruBatu {
+		for y, cell := range row {
+			if cell == nil {
+				matuBatuTable[x][y] = strconv.Itoa(x*3 + y + 1)
+			} else {
+				matuBatuTable[x][y] = cell.String()
+			}
+		}
+	}
+	return matuBatuTable
+}
+
+func (m model) winner() *MARUBATU {
+	winPatterns := [][3]int{
+		{1, 2, 3},
+		{4, 5, 6},
+		{7, 8, 9},
+		{1, 4, 7},
+		{2, 5, 8},
+		{3, 6, 9},
+		{1, 5, 9},
+		{3, 5, 7},
+	}
+	for _, p := range winPatterns {
+		if m.getCell(p[0]) != nil && m.getCell(p[1]) != nil && m.getCell(p[2]) != nil &&
+			*m.getCell(p[0]) == *m.getCell(p[1]) && *m.getCell(p[1]) == *m.getCell(p[2]) {
+			return m.getCell(p[0])
+		}
+	}
+	return nil
+}
+
+func (m model) Init() tea.Cmd {
+	return nil
+}
+
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var err error
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c", "q":
+			return m, tea.Quit
+
+		case "1", "2", "3", "4", "5", "6", "7", "8", "9":
+			var num int
+			if num, err = strconv.Atoi(msg.String()); err != nil {
+				return m, nil
+			}
+
+			if err = m.setCell(num); err != nil {
+				return m, tea.Println("already put. please input other number.")
+			} else {
+				if winner := m.winner(); winner != nil {
+					return m, tea.Batch(
+						tea.Quit,
+						tea.Println(fmt.Sprintf("\n %s win!!!!!", winner.String())),
+					)
+				}
+				m.turn = !m.turn
+				return m, nil
+			}
+
+		default:
+			return m, nil
+		}
+	}
+
+	return m, nil
+}
+
+func (m model) View() string {
+	var matuBatuTable [3][3]string = m.createBarubatuTable()
+
+	return fmt.Sprintf(`
+turn: %s
+
+	  %s | %s | %s
+	 ---+---+---
+	  %s | %s | %s
+	 ---+---+---
+	  %s | %s | %s
+
+	`, m.turn.String(),
+		matuBatuTable[0][0], matuBatuTable[0][1], matuBatuTable[0][2],
+		matuBatuTable[1][0], matuBatuTable[1][1], matuBatuTable[1][2],
+		matuBatuTable[2][0], matuBatuTable[2][1], matuBatuTable[2][2])
+}
+
+func main() {
+	var m model
+	p := tea.NewProgram(m)
+	if _, err := p.Run(); err != nil {
+		fmt.Printf("error: %v\n", err)
+		os.Exit(1)
+	}
+}
+```

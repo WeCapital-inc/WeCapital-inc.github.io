@@ -1,0 +1,212 @@
+---
+title: Golangで作るTUIツール
+description: GolangのBubble Teaを使ってPingのTUIツールを作ってみました。
+slug: golan-ping-tool
+authors:
+  - daichi.ogura
+tags: [golang]
+hide_table_of_contents: false
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+import Typography from "@mui/material/Typography";
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import InfoIcon from '@mui/icons-material/Info';
+import Button from '@mui/material/Button';
+import { BarChart } from '@mui/x-charts/BarChart';
+import Cat from '@site/src/components/Cat';
+import JobPosting from '@site/src/components/JobPosting';
+import MarubatuGolang from "@site/src/components/07/05/marubatu.mdx";
+import FullMarubatuGolang from "@site/src/components/07/05/full_marubatu.mdx";
+
+GolangのBubble Teaというライブラリを使って、TUI[^tui]で動作するPingツールを作ってみました。
+
+[https://github.com/papu-nika/penguin](https://github.com/papu-nika/penguin)
+
+TUIはOSのインストールや設定から、さまざまなツールなどで使われており、一定目的に沿ったツールには向いていると思います。
+サンプルを作りながら、Bubble Teaの使い方を紹介します。
+
+{/* truncate */}
+
+[^tui]: [https://ja.wikipedia.org/wiki/テキストユーザインタフェース](https://ja.wikipedia.org/wiki/テキストユーザインタフェース)
+
+
+## Bubble Teaとは
+
+[Charm](https://charm.sh/)というCLI用のライブラリを団体?の提供しているライブラリのようです。Charmは他にも面白そうなCLI用のライブラリを提供しています。
+TUIというとlessコマンドや[tview](https://github.com/rivo/tview)のように全画面ターミナルを使うタイプがイメージがありますが、Bubble TeaはCLIの一部分だけをTUIとして利用できます。
+
+<details>
+  <summary>このまま動くサンプルコードです。<br/>"Hello, World!"を表示して「q」か「Ctrl+c」で終了するだけの最低限の動作になります。</summary>
+
+    ```go
+    package main
+
+    import (
+        "fmt"
+        "os"
+
+        tea "github.com/charmbracelet/bubbletea"
+    )
+
+    type model struct {
+    }
+
+    func (m model) Init() tea.Cmd {
+        return nil
+    }
+
+    func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+        switch msg := msg.(type) {
+        case tea.KeyMsg:
+            switch msg.String() {
+            case "ctrl+c", "q":
+                return m, tea.Quit
+            default:
+                return m, nil
+            }
+        }
+        return m, nil
+    }
+
+    func (m model) View() string {
+        return "Hello, World!"
+    }
+
+    func main() {
+        var m model
+
+        p := tea.NewProgram(m)
+        if _, err := p.Run(); err != nil {
+            os.Exit(1)
+        }
+    }
+    ```
+
+</details>
+
+tea.NewProgramの引数のtea.Modelは以下のようなシンプルなインターフェイスになっています。[Bubble TeaのREADME](https://github.com/charmbracelet/bubbletea?tab=readme-ov-file#bubble-tea)では[Elm Architecture](https://guide.elm-lang.org/architecture/)に基づくフレームワークだと書かれています。MVU(Model, View, Update)だそうで、Djangoの[MTV](https://docs.djangoproject.com/ja/5.0/glossary/#term-MTV)やRailsの[MVC](https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller)に似ているかもしれません。
+
+```go
+type Model interface {
+    // Init is the first function that will be called. It returns an optional
+    // initial command. To not perform an initial command return nil.
+    Init() Cmd
+
+    // Update is called when a message is received. Use it to inspect messages
+    // and, in response, update the model and/or send a command.
+    Update(Msg) (Model, Cmd)
+
+    // View renders the program's UI, which is just a string. The view is
+    // rendered after every Update.
+    View() string
+}
+```
+
+### 〇✕ゲームサンプル
+
+試しにoxゲームを実装します。こんな動作となります。
+
+<video playsInline autoPlay muted loop controls>
+  <source src="/video/marubatu_game.mp4" type="video/mp4"/>
+</video>  
+
+  
+
+UpdateにはSwitch分でキーイベントを待ち受けます。数字キーが押されたら、その数字に対応するセルに〇か✕を入れます。勝敗が決まったら終了します。
+つまりUpdateメソッドでユーザーの入力を受け付けて、Modelを更新し、Viewメソッドで描画します。
+
+<MarubatuGolang/>
+
+<details>
+  <summary>フルで動くコードはこちら</summary>
+  <FullMarubatuGolang/>
+</details>
+
+かなりシンプルに実装できました。ちなみに[Reactのチュートリアルの三目並べ](https://ja.react.dev/learn/tutorial-tic-tac-toe)を参考にしました。さすがにReactの方が書きやすいですが、Bubble Teaでもいい感じに書けたかと思います。
+
+### 非同期実行
+
+Pingの結果を継続的に更新して表示するには非同期に裏で実行しつつ、もちろんユーザ入力も待ち受け開ければなりません。
+Golangですので、goroutineとchannelを使って非同期処理を実装しますが、1工夫必要になります。
+
+Bubble Tea自体がイベントループをして、ユーザーの入力を待ち受けています。そして入力を受け付けたらUpdateを実行するような実装となっているはずです。  
+同じようにイベントループをもう1つ追加してあげて、外部からのイベントを待ち受ける仕組みを作ってあげればよさそうです。ここでポイントとなるのが、`tea.Cmd`です。`tea.Cmd`は`tea.Msg`を返す関数ですが、返した`tea.Msg`は裏側でUpdateメソッドに渡してくれます。
+
+ひたすらに`time.Now()`を渡して、表示するだけのプログラムを作ってみます。<Tooltip title="tea.Msgはinterface{}です" placement="top"><InfoIcon fontSize="medium"/></Tooltip>
+
+<video  playsInline autoPlay muted loop controls>
+  <source src="/video/time.mp4" type="video/mp4"/>
+</video>  
+
+
+```go
+type model struct {
+    t time.Time
+    c chan tea.Msg
+}
+
+func (m model) Init() tea.Cmd {
+    // highlight-next-line
+    return waitCount(m.c)
+}
+
+func waitCount(c chan tea.Msg) tea.Cmd {
+    return func() tea.Msg {
+        return <-c
+    }
+}
+
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+    switch msg := msg.(type) {
+    case tea.KeyMsg:
+        switch msg.String() {
+        case "ctrl+c", "q":
+            return m, tea.Quit
+        }
+    // highlight-start
+    case time.Time:
+        m.t = msg
+        return m, waitCount(m.c)
+    }
+    // highlight-end
+
+    return m, nil
+}
+
+func (m model) View() string {
+    return m.t.Local().Format("2006-01-02 15:04:05.00")
+}
+
+// highlight-start
+func roopEvent(c chan tea.Msg) {
+    for {
+        c <- time.Now()
+    }
+}
+// highlight-end
+```
+
+:::warning
+ちなみに、UpdateメソッドとViewメソッドを実行するだけでは描画されません。実際のレンダリングは[このあたり](https://github.com/charmbracelet/bubbletea/blob/master/tea.go#L414)で行われていそうです。
+:::
+
+### Pingツール
+
+公開しているので、試してみてください！
+
+```shell
+go install github.com/papu-nika/penguin@latest
+```
+
+[https://github.com/papu-nika/penguin](https://github.com/papu-nika/penguin)
+
+
+## さいごに
+
+私はネットワークエンジニア出身ですが、ExPingなどのツールを使っていました。もう少し手軽にできるとよさそうだなと思い、Pingツールを作ってみました。[pro-bing](github.com/prometheus-community/pro-bing)というライブラリを使っていますがHTTPクライアントも対応しているようなので、HTTP対応してもいいかもしれません。
+
+<JobPosting/>

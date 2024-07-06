@@ -1,0 +1,63 @@
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+<Tabs>
+    <TabItem value="Updateメソッド" label="Update" default>
+    ```go
+    func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+        var err error
+        switch msg := msg.(type) {
+        case tea.KeyMsg:
+            switch msg.String() {
+            case "ctrl+c", "q":
+                return m, tea.Quit
+            # highlight-start
+            case "1", "2", "3", "4", "5", "6", "7", "8", "9":
+                var num int
+                if num, err = strconv.Atoi(msg.String()); err != nil {
+                    return m, nil
+                }
+
+                if err = m.setCell(num); err != nil {
+                    return m, tea.Println("already put. please input other number.")
+                } else {
+                    if winner := m.winner(); winner != nil {
+                        return m, tea.Batch(
+                            tea.Quit,
+                            tea.Println(fmt.Sprintf("\n %s win!!!!!", winner.String())),
+                        )
+                    }
+                    m.turn = !m.turn
+                    return m, nil
+                }
+            # highlight-end
+            default:
+                return m, nil
+            }
+        }
+        return m, nil
+    }
+    ```
+    </TabItem>
+    <TabItem value="Viewメソッド" label="View">
+    ```go
+    func (m model) View() string {
+        var matuBatuTable [3][3]string = m.createBarubatuTable()
+
+        return fmt.Sprintf(`
+    turn: %s
+
+            %s | %s | %s
+        ---+---+---
+            %s | %s | %s
+        ---+---+---
+            %s | %s | %s
+    `, m.turn.String(),
+        matuBatuTable[0][0], matuBatuTable[0][1], matuBatuTable[0][2],
+        matuBatuTable[1][0], matuBatuTable[1][1], matuBatuTable[1][2],
+        matuBatuTable[2][0], matuBatuTable[2][1], matuBatuTable[2][2]
+        )
+    }
+    ```
+    </TabItem>
+</Tabs>

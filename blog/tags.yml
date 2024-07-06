@@ -10,3 +10,7 @@ mdx:
   label: MDX
   permalink: /mdx
   description: MDX tag description
+golang:
+  label: Go
+  permalink: /go
+  description: Go tag description
