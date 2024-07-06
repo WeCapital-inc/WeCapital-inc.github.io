@@ -1,16 +1,18 @@
 docusaurus:
   label: Docusaurus
   permalink: /docusaurus
-  description: Docusaurus tag description
 blog:
   label: Blog
   permalink: /blog
-  description: Blog tag description
 mdx:
   label: MDX
   permalink: /mdx
-  description: MDX tag description
 golang:
   label: Go
   permalink: /go
-  description: Go tag description
+aws:
+  label: AWS
+  permalink: /aws
+fargate:
+  label: Fargate
+  permalink: /fargate
