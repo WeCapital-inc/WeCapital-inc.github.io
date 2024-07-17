@@ -58,13 +58,15 @@ Application Auto Scalingは4要素で構成されています。
 - スケジュール
 
 ```mermaid
+%%{init:{'theme':'base','themeVariables':{'primaryColor':'#4a5977','primaryTextColor':'#FAFBF9','primaryBorderColor':'#6A7FAB','lineColor':'#6A7FABCC','textColor':'#6A7FABCC','fontSize':'20px'}}}%%
+
 flowchart BT
-    スケールインスケジュール --> ターゲット
-    スケールアウトアラーム --> ターゲット
-    スケールアウトスケジュール  --> スケールアウトポリシー
-    スケールインアラーム --> スケールインポリシー
-    スケールインポリシー --> ターゲット
-    スケールアウトポリシー --> ターゲット
+    sis(スケールインスケジュール) --> t(ターゲット)
+    sos(スケールアウトスケジュール) --> t(ターゲット)
+    soa(スケールアウトアラーム) --> sop(スケールアウトポリシー)
+    sia(スケールインアラーム) --> sip(スケールインポリシー)
+    sip(スケールインポリシー) --> t(ターゲット)
+    sop(スケールアウトポリシー) --> t(ターゲット)
 ```
 
 ターゲットもサービス同様にスケーリングで変更される値は`ignore_changes`で無視しておくと無難でしょう。

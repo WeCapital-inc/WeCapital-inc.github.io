@@ -1,0 +1,111 @@
+---
+title: AWS Control TowerでAWS Configの設定を変更する
+description: AWS Control TowerでAWS Configのオーバーライド設定を変更して費用を抑える
+slug: aws-config-with-control-tower
+authors:
+  - daichi.ogura
+tags: [aws, aws-config, aws-control-tower, cost]
+hide_table_of_contents: false
+---
+
+import JobPosting from '@site/src/components/JobPosting';
+
+AWS Configの費用は頻繁なデプロイやリソースの変更により費用が高騰することがあります。  
+監視リソースの除外や頻度の変更などで費用を抑えることができますが、AWS Control Towerを利用している場合、メンバーアカウントAWS Configは変更はSCPにより制限されており直接変更できません。
+
+これの回避のためにこの記事では、AWS Control Towerで用意されるCloudformation StackSetsを変更することでAWS Configの設定を変更する方法を紹介します。
+
+{/* truncate */}
+
+こちらの記事を参考にさせて頂いています。  
+-> [AWS Control Towerで設定されたAWS Configの料金が高騰したのでどうにかした話](https://qiita.com/leonis_sk/items/45949b268dfa43fac5f6)
+
+今回はセキュリティも担保するために無効化ではなく、価格高騰の原因となっている特定リソースを日時の記録にするよう設定をオーバーライドします。  
+※リソースごとに有効か無効かしか設定できませんでしたが、日時での記録が可能になりました。 [^awsconfig]
+
+[^awsconfig]: [AWS Config、定期記録をサポートし、変更の追跡を効率的にスケール可能に](https://aws.amazon.com/jp/about-aws/whats-new/2023/11/aws-config-periodic-recording/)
+
+:::warning
+
+設定変更による影響の保証はないため、ご自身の責任で設定変更を行ってください。
+
+:::
+
+## 前置き
+
+変更方法だけ知りたい方は[変更方法](#変更方法)に飛んでください。
+
+### AWS Control Tower
+
+[AWS Control Tower とは](https://docs.aws.amazon.com/ja_jp/controltower/latest/userguide/what-is-control-tower.html)のドキュメントの引用に説明されています。
+
+> AWS Control Tower では、規範的なベストプラクティスに従って、 AWS マルチアカウント環境を簡単にセットアップおよび管理できます。AWS Control Tower は、 AWS Organizations、 AWS Service Catalog、AWS IAM Identity Centerなど、他のAWS いくつかの サービスの機能をオーケストレートして1 時間以内にランディングゾーンを構築します。リソースは、ユーザーに代わって設定および管理されます。
+
+AWS Control Towerを使うことでそれ自体の知識が余分に必要になるデメリットもありますが、個人的にはCloud TrailやAWS Configの設定が自動でされたり、リージョン制限を行えたりと安心感があり、便利なサービスだと思っています。  
+ただし、様々な制約も課すため使いこんでいると今回のように不便な部分もあります。
+
+### AWS CloudFormation StackSets
+
+[StackSets](https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/stacksets-concepts.html)とは、1つのテンプレートで複数リージョンや複数アカウントにスタックを作成する機能です。AWS Control TowerはStackSetsを利用してメンバーアカウントの有効なリージョンにリソースをデプロイしています。AWS Configの他にも、Account FactoryやIAM RoleなどAWS Control Towerに必要なリソースがStackSetsでデプロイされています。
+
+### AWS Configの料金の高騰
+
+頻繁なデプロイやスケーリングなどが原因でAWS Configの料金が高騰することがあります。
+高騰している原因となるリソースはCloudWatch Metricsで確認できます。 [^cost-check]  
+意外と高く0.003USDなので、1万回の変更を行うと30USDになります。
+
+[https://aws.amazon.com/jp/config/pricing/](https://aws.amazon.com/jp/config/pricing/)
+
+[^cost-check]: クラスメソッドさんの記事を参考にしています。[【AWS Configコスト削減】どのリソースが原因になっているのかCloudWatchメトリクスで確認してみた](https://dev.classmethod.jp/articles/reduce-aws-config-costs-with-cloudwatch-metrics/)
+
+## 変更方法
+
+### マネージメントアカウントのStackSetsを変更する
+
+1. CloudFormationのStackSetsの**AWSControlTowerBP-BASELINE-CONFIG**を開きます。
+2. **テンプレート**タブをコピーして、以下のように追記したファイルを作成します。
+
+  ```yaml
+  Resources:
+  ConfigRecorder:
+    Type: AWS::Config::ConfigurationRecorder
+    Properties:
+      Name: !Sub ${ManagedResourcePrefix}-BaselineConfigRecorder
+      RoleARN: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/config.amazonaws.com/AWSServiceRoleForConfig
+      RecordingGroup:
+        AllSupported: !Ref AllSupported
+        IncludeGlobalResourceTypes: !If
+          - IsHomeRegion
+          - !Ref IncludeGlobalResourceTypes
+          - "false"
+        ResourceTypes: !If
+          - IsAllSupported
+          - !Ref AWS::NoValue
+          - !Ref ResourceTypes
+    # highlight-start
++     RecordingMode:
++       RecordingFrequency: "CONTINUOUS"
++       RecordingModeOverrides:
++         - RecordingFrequency: "DAILY"
++           ResourceTypes:
++             - AWS::EC2::VPC
++             - {DAILYに変更したいリソースを追記する}
+    # highlight-end
+  ```
+
+3. **アクション** - **StackSetsの詳細を編集**を開きます。
+4. **既存テンプレートを置き換える**を選択して、編集したファイルをアップロードします。
+5. **次へ**を選択して進んでいき、**デプロイオプションの設定**にて、デプロイ対象アカウント・組織および、リージョンを指定します。
+6. **次へ**を選択して確認して問題なければデプロイします。
+
+デプロイ後は、対象スタックセットの**オペレーション**タブにて実行ステータスが確認できます。かつ対象アカウントにて実際に変更されているか確認してください。
+
+## さいごに
+
+AWS Control Towerは便利な反面、こういった制約も生まれるのが難点ですが、正規の方法ではありませんが変更できました。
+ランディングゾーンのアップデートにより巻き戻る可能性もありますが、暫定対応としては許容できるかと思います。
+
+なお公式には、こういった方法（ツール）も出ています。
+[https://aws.amazon.com/jp/blogs/mt/customize-aws-config-resource-tracking-in-aws-control-tower-environment/](https://aws.amazon.com/jp/blogs/mt/customize-aws-config-resource-tracking-in-aws-control-tower-environment/)
+
+<JobPosting/>
