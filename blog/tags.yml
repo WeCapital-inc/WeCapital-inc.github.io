@@ -19,3 +19,12 @@ fargate:
 application-auto-scaling:
   label: Application Auto Scaling
   permalink: /application-auto-scaling
+aws-config:
+  label: AWS Cofig
+  permalink: /aws-config
+aws-control-tower:
+  label: AWS Control Tower
+  permalink: /aws-control-tower
+cost:
+  label: Costa
+  permalink: /cost
