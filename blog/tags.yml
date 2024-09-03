@@ -28,3 +28,6 @@ aws-control-tower:
 cost:
   label: Costa
   permalink: /cost
+google workspace:
+  label: Google Workspace
+  permalink: /google-workspace

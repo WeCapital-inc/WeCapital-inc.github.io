@@ -1,0 +1,39 @@
+---
+title: SendgridのBlockアクティビティを通知する
+description: SendgridのBlockアクティビティを通知する
+slug: get_sendgrid_block_activity
+authors:
+  - daichi.ogura
+tags: [sendgrid, slack, aws, lambda]
+keywords: [sendgrid, slack, aws, lambda]
+hide_table_of_contents: false
+
+---
+
+<head>
+  <script type="application/ld+json">
+    {JSON.stringify({
+      "@graph": [
+        {
+          "@context": "https://schema.org/",
+          "@type": "WebSite",
+          name: "WeCapital技術ブログ",
+          alternateName: "WeCapital技術ブログ",
+          url: "https://wecapital-inc.github.io",
+        },
+      ],
+    })}
+  </script>
+</head>
+
+import JobPosting from '@site/src/components/JobPosting';
+import HeadTags from '@site/src/components/HeadTags';
+
+
+Sendgridでメールを送信する際APIリクエスト時に失敗したものはそのレスポンスで確認できますが、メールが送信が成功したかどうかは確認できません。あくまでAPIでは送信のためのリクエストが成功したかどうかまでしかわからないためです。
+メール
+
+
+{/* truncate */}
+
+<JobPosting/>

@@ -6,8 +6,8 @@ import lightTheme from "./src/utils/prism";
 import rehypePrismPlus from "rehype-prism-plus";
 
 const config: Config = {
-  title: "Tech Blog",
-  tagline: "Tech blog by WeCapital Engineers",
+  title: "WeCapital技術ブログ",
+  tagline: "WeCapitalエンジニアによる技術ブログ",
   favicon: "img/favicon.ico",
 
   url: "https://WeCapital-inc.github.io",
@@ -46,7 +46,6 @@ const config: Config = {
         sitemap: {
           lastmod: "date",
           changefreq: "weekly",
-          priority: 0.5,
           ignorePatterns: ["/tags/**"],
           filename: "sitemap.xml",
           createSitemapItems: async (params) => {
@@ -66,7 +65,6 @@ const config: Config = {
       respectPrefersColorScheme: false,
     },
     navbar: {
-      title: "Tech Blog",
       hideOnScroll: true,
       logo: {
         alt: "WeCapital Logo",
