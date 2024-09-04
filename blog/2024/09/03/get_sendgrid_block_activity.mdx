@@ -1,6 +1,6 @@
 ---
-title: SendgridのBlockアクティビティを通知する
-description: SendgridのBlockアクティビティを通知する
+title: Sendgridで送信できなかったメールを件名を含めて通知する
+description: Sendgridで送信できなかったメールを件名を含めて通知する方法を紹介します。
 slug: get_sendgrid_block_activity
 authors:
   - daichi.ogura
@@ -29,11 +29,131 @@ hide_table_of_contents: false
 import JobPosting from '@site/src/components/JobPosting';
 import HeadTags from '@site/src/components/HeadTags';
 
-
 Sendgridでメールを送信する際APIリクエスト時に失敗したものはそのレスポンスで確認できますが、メールが送信が成功したかどうかは確認できません。あくまでAPIでは送信のためのリクエストが成功したかどうかまでしかわからないためです。
-メール
-
+弊社ではLambdaとEventBridgeで定期実行していますが、利用して送信できなかったメールをSlackに通知する方法を一部コードで紹介します。
 
 {/* truncate */}
+
+## 利用するAPI
+
+### ブロック
+
+[Blocks API](https://www.twilio.com/docs/sendgrid/glossary/blocks)はブロックしたメールの情報を取得できます。ブロックは4xx, 5xxで送信できなかったもののリストが記録されたものです。Sendgridのバウンスはハードバウンスのみで、ブロックにはソフトバウンスも含まれます。
+
+> 電子メールがブロックされるのは、IP アドレスが拒否リストに追加された場合、または ISP またはメッセージング組織によってブロックされた場合です。
+
+サンプルのレスポンスは以下の通りで送信先メールアドレスとSMTPステータスとメッセージは取得できますが、件名は取得できません。
+
+```json
+  {
+    "created": 1443651141,
+    "email": "user1@example.com",
+    "reason": "Connection timed out",
+    "status": "4.0.0"
+  },
+```
+
+※https://www.twilio.com/docs/sendgrid/api-reference/blocks-api/retrieve-a-specific-block
+
+### アクティビティ
+
+[Email Activity](https://www.twilio.com/docs/sendgrid/api-reference/email-activity)はメール送信の詳細な履歴を取得できます。1つのメールに対して、ソフトバウンスして再送した場合なども記録されます
+
+> メール アクティビティ API を使用すると、保存されているすべてのメッセージを照会したり、個々のメッセージを照会したり、保存されているメッセージに関するデータを含む CSV をダウンロードしたりできます。
+> 取得したら、メッセージに関連付けられたデータを調べて、メール送信をよりよく理解できます。たとえば、返送されたすべてのメッセージや、同じ件名のメッセージをすべて取得して、それらの共通点を検索できます。
+
+:::warning
+
+Email Activityはメールアクティビティ履歴のオプション追加購入が必要です。
+
+:::
+
+サンプルのレスポンスは以下の通りで、多くの情報を取得できます。
+
+```json
+{
+  "messages": [
+    {
+      "from_email": "from@test.com",
+      "msg_id": "abc123",
+      "subject": "something profound",
+      "to_email": "to@test.com",
+      "status": "processed",
+      "opens_count": 0,
+      "clicks_count": 0,
+      "last_event_time": "2017-10-13T18:56:21Z",
+      "last_timestamp": 1495064728
+    },
+  ]
+}
+```
+
+※https://www.twilio.com/docs/sendgrid/api-reference/email-activity/filter-all-messages
+
+## サンプルコード
+
+Blockを30分間隔で実施し、30分以内にブロックされたメールを取得し、その送信メールアドレスを基にアクティビティを取得しています。これを2つに分けてサンプルを紹介します。
+
+### Blockの検知
+
+ブロックしたメールアドレスを取得するサンプルコードです。
+
+```python
+def example():
+    blocks = getSendgridBlocks(1800)
+    for block in blocks:
+        # ブロックしたメールアドレスを取得
+        print(block["email"])
+
+def getSendgridBlocks(check_interval_seconds:int) -> list:
+    now = datetime.now()
+    endTime = now.timestamp()
+    startTime = now.timestamp() - check_interval_seconds
+
+    response = requests.get(
+        url="https://api.sendgrid.com/v3/suppression/blocks",
+        params={
+            "start_time": int(startTime),
+            "end_time": int(endTime),
+            "limit": 10,
+            "offset": 0,
+        },
+        headers={
+            "Authorization": "Bearer " + SENDGRID_TOKEN,
+        },
+    )
+    return respomse.json()
+```
+
+### アクティビティから件名の取得
+
+送信先アドレスで最新5件のメールの件名を取得するサンプルコードです。もちろんレスポンスに含まれる他の情報も取得できます。
+
+```python
+def main():
+    activities = getActivity("test@example.com", 5)
+    for activity in activities:
+        # 件名を取得
+        print(activity["subject"])
+
+def getActivity(to_mail:str, limit:int) -> list:
+    response = requests.get(
+        url="https://api.sendgrid.com/v3/messages",
+        params={
+            "query": (f"to_email=\"{to_mail}\""),
+            "limit": limit,
+        },
+        headers={
+            "Authorization": "Bearer " + SENDGRID_TOKEN,
+        }
+    )
+
+    return response.json()
+```
+
+## さいごに
+
+ブロックしたメールを検知する例はありましたが、それだけだとアクションがとりづらいため件名やステータス、過去メールの情報も取得しておくと管理画面に飛ばずに情報を得られるため便利です。
+ブロックはWebhook通知が可能なため、その方がリアルタイムに検知可能そうです。
 
 <JobPosting/>
